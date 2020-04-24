@@ -1,4 +1,12 @@
-import React, { useState, useEffect, useRef, useReducer } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useReducer,
+  useCallback,
+} from "react";
+import axios from "axios";
+
 const API_ENDPOINT = "https://hn.algolia.com/api/v1/search?query=";
 
 const storiesReducer = (state, action) => {
@@ -43,53 +51,75 @@ const App = () => {
     isLoading: false,
     isError: false,
   });
+  const [url, setUrl] = useState(`${API_ENDPOINT}${searchTerm}`);
+
+  const handleFetchStories = useCallback(async () => {
+    dispatchStories({ type: "STORIES_FETCH_INIT" });
+    try {
+      const result = await axios.get(url);
+      dispatchStories({
+        type: "STORIES_FETCH_SUCCESS",
+        payload: result.data.hits,
+      });
+    } catch {
+      dispatchStories({ type: "STORIES_FETCH_FAILURE" });
+    }
+  }, [url]);
 
   useEffect(() => {
-    dispatchStories({ type: "STORIES_FETCH_INIT" });
-    fetch(`${API_ENDPOINT}${searchTerm}`)
-      .then((response) => response.json())
-      .then((result) => {
-        dispatchStories({
-          type: "STORIES_FETCH_SUCCESS",
-          payload: result.hits,
-        });
-      })
-      .catch(() => dispatchStories({ type: "STORIES_FETCH_FAILURE" }));
-  }, [searchTerm]);
+    handleFetchStories();
+  }, [handleFetchStories]);
+
   const handleRemoveStory = (item) => {
     dispatchStories({
       type: "REMOVE_STORY",
       payload: item,
     });
   };
-  function handleSearch(event) {
+
+  function handleSearchInput(event) {
     setSearchTerm(event.target.value);
   }
-  const searchedStories = stories.data.filter((story) =>
-    story.title.toLowerCase().includes(searchTerm.toLocaleLowerCase())
-  );
+
+  function handleSearchSubmit(event) {
+    setUrl(`${API_ENDPOINT}${searchTerm}`);
+    event.preventDefault();
+  }
+
   return (
     <div>
       <h1>My Hacker Stories</h1>
-      <InputWithLabel
-        id="search"
-        label="Search"
-        value={searchTerm}
-        onInputChange={handleSearch}
-        isFocused
-      >
-        <strong>
-          <Text text="Search:" />
-        </strong>
-      </InputWithLabel>
+      <SearchForm
+        onSearchSubmit={handleSearchSubmit}
+        searchTerm={searchTerm}
+        handleSearchInput={handleSearchInput}
+      />
       <hr />
       {stories.isError && <p>Something went wrong ...</p>}
       {stories.isLoading ? (
         <p>Loading...</p>
       ) : (
-        <List list={searchedStories} onRemoveItem={handleRemoveStory} />
+        <List list={stories.data} onRemoveItem={handleRemoveStory} />
       )}
     </div>
+  );
+};
+const SearchForm = ({ onSearchSubmit, searchTerm, handleSearchInput }) => {
+  return (
+    <form onSubmit={onSearchSubmit}>
+      <InputWithLabel
+        id="search"
+        label="Search"
+        value={searchTerm}
+        onInputChange={handleSearchInput}
+        isFocused
+      >
+        <strong>Search:</strong>
+      </InputWithLabel>
+      <button disabled={!searchTerm} type="submit">
+        Submit
+      </button>
+    </form>
   );
 };
 const InputWithLabel = ({
@@ -142,6 +172,5 @@ const Item = ({ item, onRemoveItem }) => {
     </div>
   );
 };
-const Text = ({ text }) => <>{text}</>;
 
 export default App;
