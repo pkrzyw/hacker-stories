@@ -46,11 +46,6 @@
   color: #ffffff;
 }
 
-.button:hover > svg > g {
-  fill: #ffffff;
-  stroke: #ffffff;
-}
-
 .button_small {
   padding: 5px;
 }
@@ -78,4 +73,8 @@
   background-color: transparent;
 
   font-size: 24px;
+}
+.button:hover > svg > g {
+  fill: #ffffff;
+  stroke: #ffffff;
 }
