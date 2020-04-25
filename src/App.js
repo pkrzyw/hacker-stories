@@ -134,13 +134,8 @@ const InputWithLabel = ({
   onInputChange,
   isFocused,
   children,
-<<<<<<< HEAD:src/App.tsx
-}: InputWithLabelProps) => {
-  const inputRef = useRef<HTMLInputElement>(null!);
-=======
 }) => {
   const inputRef = useRef();
->>>>>>> parent of 1b38360... typescripted:src/App.js
   useEffect(() => {
     if (isFocused && inputRef.current) {
       inputRef.current.focus();
