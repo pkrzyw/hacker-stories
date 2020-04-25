@@ -4,7 +4,6 @@ import React, {
   useRef,
   useReducer,
   useCallback,
-  memo,
 } from "react";
 import axios from "axios";
 import "./App.css";
@@ -39,13 +38,8 @@ const storiesReducer = (state, action) => {
 
 const useSemiPersistentState = (key, initialState) => {
   const [value, setValue] = useState(localStorage.getItem(key) || initialState);
-  const isMounted = useRef(false);
   useEffect(() => {
-    if (!isMounted.current) {
-      isMounted.current = true;
-    } else {
-      localStorage.setItem(key, value);
-    }
+    localStorage.setItem(key, value);
   }, [value, key]);
 
   return [value, setValue];
@@ -77,25 +71,28 @@ const App = () => {
     handleFetchStories();
   }, [handleFetchStories]);
 
-  const handleRemoveStory = useCallback((item) => {
+  const handleRemoveStory = (item) => {
     dispatchStories({
       type: "REMOVE_STORY",
       payload: item,
     });
-  }, []);
+  };
 
-  function handleSearchInput(event) {
+  const handleSearchInput = (event) => {
     setSearchTerm(event.target.value);
-  }
+  };
 
-  function handleSearchSubmit(event) {
+  const handleSearchSubmit = (event) => {
     setUrl(`${API_ENDPOINT}${searchTerm}`);
     event.preventDefault();
-  }
-  console.log("B:App");
+  };
+
+  const sumComments = getSumComments(stories);
   return (
     <div className="container">
-      <h1 className="headline-primary">My Hacker Stories</h1>
+      <h1 className="headline-primary">
+        My Hacker Stories with {sumComments} comments.
+      </h1>
       <SearchForm
         onSearchSubmit={handleSearchSubmit}
         searchTerm={searchTerm}
@@ -110,28 +107,26 @@ const App = () => {
     </div>
   );
 };
-const SearchForm = ({ onSearchSubmit, searchTerm, onSearchInput }) => {
-  return (
-    <form onSubmit={onSearchSubmit} className="search-form">
-      <InputWithLabel
-        id="search"
-        label="Search"
-        value={searchTerm}
-        onInputChange={onSearchInput}
-        isFocused
-      >
-        <strong>Search:</strong>
-      </InputWithLabel>
-      <button
-        disabled={!searchTerm}
-        type="submit"
-        className="button button_large"
-      >
-        Submit
-      </button>
-    </form>
-  );
-};
+const SearchForm = ({ onSearchSubmit, searchTerm, onSearchInput }) => (
+  <form onSubmit={onSearchSubmit} className="search-form">
+    <InputWithLabel
+      id="search"
+      label="Search"
+      value={searchTerm}
+      onInputChange={onSearchInput}
+      isFocused
+    >
+      <strong>Search:</strong>
+    </InputWithLabel>
+    <button
+      disabled={!searchTerm}
+      type="submit"
+      className="button button_large"
+    >
+      Submit
+    </button>
+  </form>
+);
 const InputWithLabel = ({
   id,
   type = "text",
@@ -163,13 +158,10 @@ const InputWithLabel = ({
     </>
   );
 };
-const List = memo(
-  ({ list, onRemoveItem }) =>
-    console.log("B:List") ||
-    list.map((item) => (
-      <Item item={item} key={item.objectID} onRemoveItem={onRemoveItem} />
-    ))
-);
+const List = ({ list, onRemoveItem }) =>
+  list.map((item) => (
+    <Item item={item} key={item.objectID} onRemoveItem={onRemoveItem} />
+  ));
 
 const Item = ({ item, onRemoveItem }) => (
   <div className="item">
@@ -190,5 +182,9 @@ const Item = ({ item, onRemoveItem }) => (
     </span>
   </div>
 );
+
+const getSumComments = (stories) => {
+  return stories.data.reduce((result, value) => result + value.num_comments, 0);
+};
 
 export default App;
