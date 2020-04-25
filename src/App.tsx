@@ -196,7 +196,7 @@ const InputWithLabel = ({
   isFocused,
   children,
 }: InputWithLabelProps) => {
-  const inputRef = React.useRef<HTMLInputElement>(null!);
+  const inputRef = useRef<HTMLInputElement>(null!);
   useEffect(() => {
     if (isFocused && inputRef.current) {
       inputRef.current.focus();
