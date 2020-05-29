@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { ReactComponent as Check } from "./check.svg";
-import { ReactComponent as DownArrow } from "./down.svg";
-import { ReactComponent as UpArrow } from "./up.svg";
+import { ReactComponent as Check } from "../assets/check.svg";
+import { ReactComponent as DownArrow } from "../assets/down.svg";
+import { ReactComponent as UpArrow } from "../assets/up.svg";
 import { sortBy } from "lodash";
 
 const SORTS = {
