@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useReducer, useCallback } from "react";
-import axios from "axios";
+import React, { useState, useEffect, useCallback } from "react";
 import "./App.css";
 import List from "./List";
 import SearchForm from "./SearchForm";
 import LastSearches from "./LastSearches";
+import { useDispatch, useSelector } from "react-redux";
+import { doStoriesFetch } from "../actions/stories";
+import { getStories } from "../selectors/stories";
 const API_BASE = "https://hn.algolia.com/api/v1";
 const API_SEARCH = "/search";
 const PARAM_SEARCH = "query=";
@@ -11,34 +13,6 @@ const PARAM_PAGE = "page=";
 
 const getUrl = (searchTerm, page) =>
   `${API_BASE}${API_SEARCH}?${PARAM_SEARCH}${searchTerm}&${PARAM_PAGE}${page}`;
-export const storiesReducer = (state, action) => {
-  switch (action.type) {
-    case "STORIES_FETCH_INIT":
-      return { ...state, isLoading: true, isError: false };
-    case "STORIES_FETCH_SUCCESS":
-      return {
-        ...state,
-        isLoading: false,
-        isError: false,
-        data:
-          action.payload.page === 0
-            ? action.payload.list
-            : state.data.concat(action.payload.list),
-        page: action.payload.page,
-      };
-    case "STORIES_FETCH_FAILURE":
-      return { ...state, isError: true, isLoading: false };
-    case "REMOVE_STORY":
-      return {
-        ...state,
-        data: state.data.filter(
-          (story) => story.objectID !== action.payload.objectID
-        ),
-      };
-    default:
-      throw new Error();
-  }
-};
 
 const useSemiPersistentState = (key, initialState) => {
   const [value, setValue] = useState(localStorage.getItem(key) || initialState);
@@ -53,6 +27,7 @@ const extractSearchTerm = (url) =>
   url
     .substring(url.lastIndexOf("?") + 1, url.lastIndexOf("&"))
     .replace(PARAM_SEARCH, "");
+
 const getLastSearches = (urls) =>
   urls
     .reduce((result, url, index) => {
@@ -73,39 +48,17 @@ const getLastSearches = (urls) =>
 const App = () => {
   const [searchTerm, setSearchTerm] = useSemiPersistentState("search", "React");
   const [urls, setUrls] = useState([getUrl(searchTerm, 0)]);
-  const [stories, dispatchStories] = useReducer(storiesReducer, {
-    data: [],
-    page: 0,
-    isLoading: false,
-    isError: false,
-  });
 
-  const handleFetchStories = useCallback(async () => {
-    dispatchStories({ type: "STORIES_FETCH_INIT" });
-    try {
-      const result = await axios.get(urls[urls.length - 1]);
-      console.log(result);
-      dispatchStories({
-        type: "STORIES_FETCH_SUCCESS",
-        payload: {
-          list: result.data.hits,
-          page: result.data.page,
-        },
-      });
-    } catch {
-      dispatchStories({ type: "STORIES_FETCH_FAILURE" });
-    }
-  }, [urls]);
+  const stories = useSelector((store) => getStories(store));
+  const dispatch = useDispatch();
+
+  const handleFetchStories = useCallback(() => {
+    dispatch(doStoriesFetch(urls[urls.length - 1]));
+  }, [urls, dispatch]);
 
   useEffect(() => {
     handleFetchStories();
   }, [handleFetchStories]);
-  const handleRemoveStory = (item) => {
-    dispatchStories({
-      type: "REMOVE_STORY",
-      payload: item,
-    });
-  };
 
   const handleSearchInput = (event) => {
     setSearchTerm(event.target.value);
@@ -129,10 +82,9 @@ const App = () => {
     const searchTerm = extractSearchTerm(lastUrl);
     handleSearch(searchTerm, stories.page + 1);
   };
-
   const sumComments = getSumComments(stories);
-
   const lastSearches = getLastSearches(urls);
+
   return (
     <div className="container">
       <h1 className="headline-primary">
@@ -150,7 +102,7 @@ const App = () => {
       />
       <hr />
       {stories.isError && <p>Something went wrong ...</p>}
-      <List list={stories.data} onRemoveItem={handleRemoveStory} />
+      <List />
       {stories.isLoading ? (
         <p>Loading...</p>
       ) : (

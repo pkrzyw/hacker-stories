@@ -2,13 +2,8 @@ import React from "react";
 import renderer from "react-test-renderer";
 import { mount } from "enzyme";
 
-import App, {
-  Item,
-  List,
-  SearchForm,
-  InputWithLabel,
-  storiesReducer,
-} from "./App";
+import App, { Item, List, SearchForm, InputWithLabel } from "./App";
+import storiesReducer from "./reducers/stories";
 import axios from "axios";
 jest.mock("axios");
 
